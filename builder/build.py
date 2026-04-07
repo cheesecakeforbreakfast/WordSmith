@@ -180,7 +180,7 @@ def _format_llm_prompt(
     tech_names = [t.get("name", "") for t in technologies if t.get("name")]
     tech_list_str = ", ".join(tech_names) if tech_names else "unknown technologies"
 
-    prompt = f"""I am performing an authorised penetration test against: {target}
+    prompt = f"""I am performing an authorised penetration test against my client's website.
 
 The following tech stack was detected:
 {tech_block}
