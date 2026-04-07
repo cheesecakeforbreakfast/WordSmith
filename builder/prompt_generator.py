@@ -1,9 +1,11 @@
 """
 Dynamic, context-aware LLM prompt generator for wordlist expansion.
 
-SITE_CONTEXT_HINTS and TECH_FOCUS_MAP are module-level constants — add new
-entries here to extend site-type inference and per-technology focus lists.
-Keys in both constants are treated as regex patterns, not literal strings.
+SITE_CONTEXT_HINTS, TECH_FOCUS_MAP, and INFRASTRUCTURE_TECHNOLOGIES are
+module-level constants — add new entries here to extend site-type inference,
+per-technology focus lists, and infrastructure header recognition.
+Keys in SITE_CONTEXT_HINTS, TECH_FOCUS_MAP, and INFRASTRUCTURE_TECHNOLOGIES
+are all treated as regex patterns, not literal strings.
 """
 
 from __future__ import annotations
@@ -15,8 +17,10 @@ import re
 # ---------------------------------------------------------------------------
 
 # Maps regex patterns (matched against discovered path values) to a plain-
-# English description of the likely site purpose. Keys are pipe-delimited
-# alternations compiled as regex at match time.
+# English description of the likely site purpose. Keys are compiled as regex
+# at match time. Matching uses whole-word boundaries to avoid false positives
+# from concatenated slugs (e.g. "clinicalconsultation" must not match
+# "clinical" or "consultation" as standalone terms).
 SITE_CONTEXT_HINTS: dict[str, str] = {
     r"shop|product|cart|checkout|order|inventory": "e-commerce platform",
     r"blog|post|article|category|author|feed": "content or publishing site",
@@ -30,7 +34,8 @@ SITE_CONTEXT_HINTS: dict[str, str] = {
 
 # Maps regex patterns (matched against technology names) to an ordered list of
 # focus areas for the LLM. Keys are matched case-insensitively against the
-# technology name from the scan report.
+# technology name from the scan report. Focus item text is also used as a
+# source of platform-indicative keywords in is_platform_path().
 TECH_FOCUS_MAP: dict[str, list[str]] = {
     r"wordpress": [
         "WordPress-specific admin and plugin paths",
@@ -144,6 +149,19 @@ TECH_FOCUS_MAP: dict[str, list[str]] = {
     ],
 }
 
+# Maps regex patterns (matched against technology names) to the platform they
+# indicate. When a detected technology matches a key here, the confidence
+# weighting block redirects the LLM toward the indicated platform rather than
+# guessing at infrastructure-header-specific paths.
+INFRASTRUCTURE_TECHNOLOGIES: dict[str, str] = {
+    r"pepyaka": "Wix",
+    r"cloudflare": "Cloudflare",
+    r"awselb|amazon": "AWS",
+    r"azure": "Azure",
+    r"x-powered-by-plesk": "Plesk",
+    r"litespeed": "LiteSpeed",
+}
+
 _GENERIC_FOCUS = [
     "Admin panel and management interface paths",
     "Configuration and environment file variants",
@@ -151,16 +169,30 @@ _GENERIC_FOCUS = [
     "API endpoint and versioned route patterns",
 ]
 
+# Words too generic to serve as platform-path signals when extracted from
+# focus item descriptions in is_platform_path().
+_FOCUS_STOPWORDS: frozenset[str] = frozenset({
+    "and", "or", "the", "a", "an", "for", "of", "in", "to", "from",
+    "with", "by", "on", "at", "is", "are", "be", "as", "into",
+    "known", "common", "default", "path", "paths", "endpoint", "endpoints",
+    "directory", "directories", "file", "files", "variant", "variants",
+    "pattern", "patterns", "route", "routes", "under", "page", "pages",
+    "specific", "type", "types", "format", "formats", "base", "root",
+    "panel", "management", "interface", "admin", "api", "data",
+    "server", "web", "app", "application", "service", "services",
+    "sub", "browsable", "legacy", "static", "media", "rest", "debug",
+})
+
 _PATH_FORMAT_BLOCK = """\
 Output format:
 
-One path per line
-No leading slash
-Use * as a wildcard where a dynamic segment is expected
-Trailing slash for directories, no trailing slash for files
-No query strings unless the parameter name itself is the finding
-No explanations, headers, or commentary
-Do not repeat any path already listed in the known paths section"""
+- One path per line
+- No leading slash
+- Use * as a wildcard where a dynamic segment is expected
+- Trailing slash for directories, no trailing slash for files
+- No query strings unless the parameter name itself is the finding
+- No explanations, headers, or commentary
+- Do not repeat any path already listed in the known paths section"""
 
 _KNOWN_PATHS_PREAMBLE = (
     "The following paths were already discovered on this target. Analyse them\n"
@@ -173,29 +205,101 @@ _KNOWN_PATHS_PREAMBLE = (
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _infer_site_context(paths: list[dict]) -> str | None:
+def _extract_focus_keywords(focus_items: list[str]) -> frozenset[str]:
     """
-    Infer the likely site purpose by matching discovered path values against
-    SITE_CONTEXT_HINTS regex patterns.
+    Extract meaningful lowercase keywords from a list of focus item descriptions.
 
-    Iterates every key in SITE_CONTEXT_HINTS as a compiled regex and counts
-    how many path values match. Returns the label for the category with the
-    highest match count, or None if no pattern matches any path.
-
-    If multiple categories tie, the first one encountered wins.
+    Used by is_platform_path() to identify platform-indicative vocabulary.
+    Filters out single-character tokens, numeric-only tokens, and words in
+    _FOCUS_STOPWORDS. Extracts alphanumeric/underscore/hyphen word tokens.
 
     Args:
-        paths: List of path dicts from the scan report (must have a "value" key).
+        focus_items: List of focus area description strings from TECH_FOCUS_MAP.
+
+    Returns:
+        A frozenset of lowercase keyword strings.
+    """
+    keywords: set[str] = set()
+    for item in focus_items:
+        for token in re.findall(r"[a-z][a-z0-9_-]*", item.lower()):
+            if len(token) > 2 and not token.isdigit() and token not in _FOCUS_STOPWORDS:
+                keywords.add(token)
+    return frozenset(keywords)
+
+
+def is_platform_path(path: str, technologies: list[dict]) -> bool:
+    """
+    Return True if the path value appears to belong to a detected platform's
+    infrastructure rather than the application itself.
+
+    For each detected technology, looks up the matching TECH_FOCUS_MAP entry
+    and extracts platform-indicative keywords from the focus item descriptions.
+    Returns True if the path contains any of those keywords.
+
+    Used to filter paths before running site context inference, so that
+    platform-level paths do not skew the inferred site purpose.
+
+    Args:
+        path:         A discovered path value string (e.g. "pro-gallery-webapp/v1/galleries/*").
+        technologies: List of detected technology dicts, each with a "name" key.
+
+    Returns:
+        True if the path matches a keyword from any detected technology's
+        focus list; False otherwise.
+    """
+    path_lower = path.lower()
+    for tech in technologies:
+        name = tech.get("name", "")
+        if not name:
+            continue
+        for pattern, focus_items in TECH_FOCUS_MAP.items():
+            if re.search(pattern, name, re.IGNORECASE):
+                keywords = _extract_focus_keywords(focus_items)
+                for kw in keywords:
+                    if kw in path_lower:
+                        return True
+    return False
+
+
+def _infer_site_context(paths: list[dict], technologies: list[dict]) -> str | None:
+    """
+    Infer the likely site purpose by matching application-level path values
+    against SITE_CONTEXT_HINTS regex patterns.
+
+    Platform-level paths (those belonging to detected technology infrastructure)
+    are filtered out via is_platform_path() before matching, so they cannot
+    skew the inference. Matching uses whole-word boundaries (\\b) to avoid
+    false positives from concatenated slug strings.
+
+    Iterates every key in SITE_CONTEXT_HINTS as a compiled regex and counts
+    how many remaining path values match. Returns the label for the category
+    with the highest match count. If multiple categories tie, the first one
+    encountered wins. Returns None if no pattern matches any path after
+    platform filtering, or if filtering removes all paths.
+
+    Args:
+        paths:        List of path dicts from the scan report (must have a "value" key).
+        technologies: List of detected technology dicts (passed to is_platform_path).
 
     Returns:
         A plain-English site-type string (e.g. "e-commerce platform"), or None.
     """
-    path_values = [p.get("value", "").lower() for p in paths]
+    app_paths = [
+        p for p in paths
+        if not is_platform_path(p.get("value", ""), technologies)
+    ]
+    if not app_paths:
+        return None
+
+    path_values = [p.get("value", "").lower() for p in app_paths]
     best_label: str | None = None
     best_count = 0
 
     for pattern, label in SITE_CONTEXT_HINTS.items():
-        compiled = re.compile(pattern, re.IGNORECASE)
+        # Wrap in word boundaries so concatenated slugs (e.g. "clinicalconsultation")
+        # do not match individual alternation terms like "clinical" or "consultation".
+        bounded = r"\b(?:" + pattern + r")\b"
+        compiled = re.compile(bounded, re.IGNORECASE)
         count = sum(1 for v in path_values if compiled.search(v))
         if count > best_count:
             best_count = count
@@ -208,13 +312,29 @@ def _confidence_instruction(name: str, confidence: str) -> str:
     """
     Return a confidence-weighted instruction line for a single technology.
 
+    Checks INFRASTRUCTURE_TECHNOLOGIES first (regex, case-insensitive). If the
+    technology is an infrastructure-level header, returns a redirect instruction
+    pointing the LLM toward the indicated platform rather than the header itself.
+    The confidence level is still noted in the redirect message.
+
+    For non-infrastructure technologies, returns a standard confidence-scaled
+    instruction (high / medium / low).
+
     Args:
-        name: Display name of the technology (e.g. "WordPress").
+        name:       Display name of the technology (e.g. "Pepyaka", "WordPress").
         confidence: One of "high", "medium", or "low".
 
     Returns:
-        A single instruction string tailored to the confidence level.
+        A single instruction string for inclusion in the technologies block.
     """
+    for pattern, platform in INFRASTRUCTURE_TECHNOLOGIES.items():
+        if re.search(pattern, name, re.IGNORECASE):
+            return (
+                f"- {name} ({confidence} confidence): {name} is an infrastructure-level "
+                f"header indicating this site runs on {platform}. Focus on {platform} "
+                f"platform paths rather than {name}-specific paths."
+            )
+
     if confidence == "high":
         return (
             f"- {name} (high confidence): Generate specific known paths for {name}. "
@@ -247,9 +367,8 @@ def _get_tech_focus(tech_name: str) -> list[str]:
     Returns:
         A list of focus-area strings for the LLM prompt.
     """
-    name_lower = tech_name.lower()
     for pattern, focus_list in TECH_FOCUS_MAP.items():
-        if re.search(pattern, name_lower, re.IGNORECASE):
+        if re.search(pattern, tech_name, re.IGNORECASE):
             return focus_list
     return _GENERIC_FOCUS
 
@@ -268,7 +387,7 @@ def _quantity_guidance(n_known: int) -> str:
         n_known: Total number of known/discovered paths in the scan report.
 
     Returns:
-        A multi-line instruction string.
+        A multi-line instruction string with bullet-prefixed prioritisation items.
     """
     if n_known < 5:
         min_p, max_p = 40, 80
@@ -279,10 +398,10 @@ def _quantity_guidance(n_known: int) -> str:
 
     return (
         f"Generate between {min_p} and {max_p} paths. Prioritise:\n\n"
-        "Paths specific to the detected technology stack\n"
-        "Paths consistent with the inferred site type if identified\n"
-        "Paths consistent with naming conventions observed in the known paths above\n"
-        "Generic high-value paths last\n\n"
+        "- Paths specific to the detected technology stack\n"
+        "- Paths consistent with the inferred site type if identified\n"
+        "- Paths consistent with naming conventions observed in the known paths above\n"
+        "- Generic high-value paths last\n\n"
         "Quality over quantity — a shorter focused list is preferable to a long generic one."
     )
 
@@ -301,11 +420,16 @@ def format_llm_prompt(
 
     The prompt structure follows this order:
         1. Engagement context line (with inferred site type if detected)
-        2. Detected technologies block (confidence-weighted per technology)
+        2. Detected technologies block (confidence-weighted per technology;
+           infrastructure headers redirect to their indicated platform)
         3. Known paths section (with inference instruction prepended)
         4. Stack-specific focus list (per detected technology, deduped)
         5. Path format instructions
         6. Quantity and prioritisation guidance
+
+    Site context inference runs only over application-level paths; platform
+    paths (those whose content matches focus keywords for detected technologies)
+    are excluded from inference to prevent false positives.
 
     Args:
         report:       Parsed scan report dict (must contain "target").
@@ -319,7 +443,7 @@ def format_llm_prompt(
         A plain-text prompt string ready to paste into any LLM.
     """
     # -- 1. Engagement context -----------------------------------------------
-    site_type = _infer_site_context(all_paths)
+    site_type = _infer_site_context(all_paths, technologies)
     context_line = "I am performing an authorised penetration test against my client's website."
     if site_type:
         context_line += f" The site appears to be a {site_type} — weight suggestions accordingly."
