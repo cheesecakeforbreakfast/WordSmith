@@ -106,7 +106,7 @@ def run_build(
 
     # Determine output path
     if output_path is None:
-        ext = "json" if fmt == "json" else "txt"
+        ext = "json" if fmt == "json" else "txt"  # prompt, dirsearch, ffuf all get .txt
         output_dir = pathlib.Path("~/.wordsmith/output/").expanduser()
         output_dir.mkdir(parents=True, exist_ok=True)
         stem = report_path.stem
@@ -121,6 +121,8 @@ def run_build(
             if fmt == "json":
                 json.dump(deduplicated, f, indent=2)
                 f.write("\n")
+            elif fmt == "prompt":
+                f.write(_format_llm_prompt(report, technologies, deduplicated))
             else:
                 # dirsearch and ffuf: flat text, one path per line
                 for p in deduplicated:
@@ -130,7 +132,73 @@ def run_build(
         return 1
 
     print(
-        f"[info] Wrote {len(deduplicated)} paths to {output_file} (format: {fmt})",
+        f"[info] Wrote prompt to {output_file}" if fmt == "prompt"
+        else f"[info] Wrote {len(deduplicated)} paths to {output_file} (format: {fmt})",
         file=sys.stderr,
     )
     return 0
+
+
+def _format_llm_prompt(
+    report: dict,
+    technologies: list[dict],
+    all_paths: list[dict],
+) -> str:
+    """
+    Build a concise LLM-ready prompt summarising the scan findings.
+
+    The output is designed to be pasted into any LLM and asks it to generate
+    an expanded wordlist based on the detected tech stack.
+    """
+    target = report.get("target", "unknown")
+
+    # Tech stack summary — group by confidence
+    tech_lines: list[str] = []
+    for tech in technologies:
+        name = tech.get("name", "")
+        conf = tech.get("confidence", "unknown")
+        source = tech.get("source", "")
+        tech_lines.append(f"  - {name} ({conf} confidence, detected via {source})")
+    tech_block = "\n".join(tech_lines) if tech_lines else "  - None detected"
+
+    # Paths already found — cap at 30 to keep the prompt tight
+    # Prefer high-confidence and non-tech_db paths for context value
+    sorted_paths = sorted(
+        all_paths,
+        key=lambda p: (
+            {"high": 0, "medium": 1, "low": 2}.get(p.get("confidence", "low"), 2),
+            0 if p.get("source") != "tech_db" else 1,
+        ),
+    )
+    sample = sorted_paths[:30]
+    path_lines = [f"  {p['value']}" for p in sample]
+    if len(all_paths) > 30:
+        path_lines.append(f"  ... and {len(all_paths) - 30} more")
+    path_block = "\n".join(path_lines) if path_lines else "  (none found)"
+
+    # Unique tech names for the ask
+    tech_names = [t.get("name", "") for t in technologies if t.get("name")]
+    tech_list_str = ", ".join(tech_names) if tech_names else "unknown technologies"
+
+    prompt = f"""I am performing an authorised penetration test against: {target}
+
+The following tech stack was detected:
+{tech_block}
+
+WordSmith has already identified these paths on the target:
+{path_block}
+
+Based on the detected tech stack ({tech_list_str}), generate an expanded list of additional paths and filenames that are likely to exist on this server and would be valuable for directory busting.
+
+Focus on:
+- Admin panels and management interfaces
+- Configuration and environment files
+- Backup and temporary files
+- API endpoints and versioned routes
+- Framework-specific routes and assets
+- Known vulnerable or sensitive endpoints for the detected technologies
+- Common development and debug paths
+
+Output one path per line with no additional commentary, headers, or explanation. Do not repeat paths already listed above.
+"""
+    return prompt

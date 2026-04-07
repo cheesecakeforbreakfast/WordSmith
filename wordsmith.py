@@ -259,8 +259,9 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Minimum confidence level for included paths")
     build_p.add_argument("--output", default=None, metavar="FILE",
                          help="Output file path (default: ~/.wordsmith/output/)")
-    build_p.add_argument("--format", choices=["dirsearch", "ffuf", "json"],
-                         default="dirsearch", help="Output format (default: dirsearch)")
+    build_p.add_argument("--format", choices=["dirsearch", "ffuf", "json", "prompt"],
+                         default="dirsearch",
+                         help="Output format (default: dirsearch). Use 'prompt' to generate an LLM-ready summary.")
     build_p.set_defaults(func=cmd_build)
 
     # --- db ---
