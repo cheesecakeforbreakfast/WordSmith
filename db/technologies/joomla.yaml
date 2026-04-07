@@ -1,0 +1,32 @@
+name: Joomla
+paths:
+  - value: administrator/
+    confidence: high
+  - value: configuration.php
+    confidence: high
+  - value: htaccess.txt
+    confidence: high
+  - value: README.txt
+    confidence: medium
+  - value: web.config.txt
+    confidence: medium
+  - value: libraries/
+    confidence: medium
+  - value: modules/
+    confidence: medium
+  - value: components/
+    confidence: medium
+  - value: plugins/
+    confidence: medium
+  - value: templates/
+    confidence: medium
+  - value: administrator/index.php
+    confidence: high
+  - value: cache/
+    confidence: low
+  - value: tmp/
+    confidence: low
+  - value: images/
+    confidence: low
+  - value: language/
+    confidence: medium

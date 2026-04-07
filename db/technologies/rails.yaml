@@ -1,0 +1,32 @@
+name: Rails
+paths:
+  - value: rails/info/properties
+    confidence: high
+  - value: rails/info/routes
+    confidence: high
+  - value: rails/mailers
+    confidence: medium
+  - value: assets/
+    confidence: medium
+  - value: api/v1/
+    confidence: medium
+  - value: config/database.yml
+    confidence: high
+  - value: .env
+    confidence: high
+  - value: public/
+    confidence: medium
+  - value: log/
+    confidence: medium
+  - value: Gemfile
+    confidence: high
+  - value: config/secrets.yml
+    confidence: high
+  - value: db/seeds.rb
+    confidence: medium
+  - value: config/routes.rb
+    confidence: medium
+  - value: config/master.key
+    confidence: high
+  - value: config/credentials.yml.enc
+    confidence: high

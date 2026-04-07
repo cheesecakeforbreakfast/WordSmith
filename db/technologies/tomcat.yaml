@@ -1,0 +1,28 @@
+name: Tomcat
+paths:
+  - value: manager/html
+    confidence: high
+  - value: host-manager/html
+    confidence: high
+  - value: manager/text
+    confidence: high
+  - value: manager/jmxproxy
+    confidence: high
+  - value: examples/servlets
+    confidence: medium
+  - value: examples/jsp
+    confidence: medium
+  - value: docs/
+    confidence: medium
+  - value: WEB-INF/web.xml
+    confidence: high
+  - value: WEB-INF/classes/
+    confidence: medium
+  - value: META-INF/
+    confidence: medium
+  - value: manager/status
+    confidence: high
+  - value: host-manager/text
+    confidence: medium
+  - value: manager/
+    confidence: high

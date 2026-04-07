@@ -1,0 +1,26 @@
+name: Nginx
+paths:
+  - value: nginx.conf
+    confidence: high
+  - value: conf.d/
+    confidence: medium
+  - value: sites-available/
+    confidence: medium
+  - value: sites-enabled/
+    confidence: medium
+  - value: nginx_status
+    confidence: high
+  - value: server-status
+    confidence: medium
+  - value: error.log
+    confidence: medium
+  - value: access.log
+    confidence: medium
+  - value: .nginx/
+    confidence: low
+  - value: logs/
+    confidence: medium
+  - value: stub_status
+    confidence: high
+  - value: /var/log/nginx/error.log
+    confidence: low

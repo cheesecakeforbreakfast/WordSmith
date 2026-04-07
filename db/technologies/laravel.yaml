@@ -1,0 +1,32 @@
+name: Laravel
+paths:
+  - value: .env
+    confidence: high
+  - value: storage/logs/laravel.log
+    confidence: high
+  - value: public/storage/
+    confidence: medium
+  - value: artisan
+    confidence: high
+  - value: config/app.php
+    confidence: medium
+  - value: database/database.sqlite
+    confidence: high
+  - value: bootstrap/cache/
+    confidence: medium
+  - value: vendor/
+    confidence: medium
+  - value: api/
+    confidence: medium
+  - value: telescope/
+    confidence: medium
+  - value: horizon/
+    confidence: medium
+  - value: api/v1/
+    confidence: medium
+  - value: storage/framework/
+    confidence: low
+  - value: .env.example
+    confidence: medium
+  - value: composer.json
+    confidence: medium

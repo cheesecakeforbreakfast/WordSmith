@@ -1,0 +1,32 @@
+name: Drupal
+paths:
+  - value: admin/
+    confidence: high
+  - value: user/login
+    confidence: high
+  - value: node/
+    confidence: medium
+  - value: sites/default/settings.php
+    confidence: high
+  - value: CHANGELOG.txt
+    confidence: high
+  - value: install.php
+    confidence: high
+  - value: update.php
+    confidence: high
+  - value: cron.php
+    confidence: medium
+  - value: modules/
+    confidence: medium
+  - value: themes/
+    confidence: medium
+  - value: xmlrpc.php
+    confidence: medium
+  - value: sites/default/files/
+    confidence: medium
+  - value: sites/all/modules/
+    confidence: medium
+  - value: /user/register
+    confidence: medium
+  - value: misc/drupal.js
+    confidence: high

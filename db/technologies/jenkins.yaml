@@ -1,0 +1,32 @@
+name: Jenkins
+paths:
+  - value: script
+    confidence: high
+  - value: credentials
+    confidence: high
+  - value: console
+    confidence: high
+  - value: api/json
+    confidence: high
+  - value: asynchPeople/
+    confidence: medium
+  - value: people/
+    confidence: medium
+  - value: log/
+    confidence: medium
+  - value: systemInfo
+    confidence: high
+  - value: configfiles/
+    confidence: high
+  - value: userContent/
+    confidence: medium
+  - value: job/
+    confidence: medium
+  - value: view/
+    confidence: medium
+  - value: crumbIssuer/api/json
+    confidence: high
+  - value: computer/
+    confidence: medium
+  - value: credentials/store/system/
+    confidence: high

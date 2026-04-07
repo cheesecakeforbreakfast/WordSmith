@@ -1,0 +1,38 @@
+name: WordPress
+paths:
+  - value: wp-admin/
+    confidence: high
+  - value: wp-login.php
+    confidence: high
+  - value: wp-content/plugins/
+    confidence: high
+  - value: wp-content/themes/
+    confidence: high
+  - value: xmlrpc.php
+    confidence: high
+  - value: wp-config.php
+    confidence: high
+  - value: wp-cron.php
+    confidence: medium
+  - value: wp-json/wp/v2/users
+    confidence: high
+  - value: readme.html
+    confidence: high
+  - value: license.txt
+    confidence: medium
+  - value: .htaccess
+    confidence: medium
+  - value: wp-includes/
+    confidence: high
+  - value: debug.log
+    confidence: low
+  - value: wp-content/uploads/
+    confidence: high
+  - value: wp-content/debug.log
+    confidence: low
+  - value: wp-activate.php
+    confidence: medium
+  - value: wp-signup.php
+    confidence: medium
+  - value: wp-trackback.php
+    confidence: low

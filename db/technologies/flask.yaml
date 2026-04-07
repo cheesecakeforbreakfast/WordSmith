@@ -1,0 +1,32 @@
+name: Flask
+paths:
+  - value: static/
+    confidence: medium
+  - value: templates/
+    confidence: medium
+  - value: .env
+    confidence: high
+  - value: app.py
+    confidence: high
+  - value: wsgi.py
+    confidence: medium
+  - value: config.py
+    confidence: medium
+  - value: instance/
+    confidence: high
+  - value: requirements.txt
+    confidence: medium
+  - value: run.py
+    confidence: medium
+  - value: debug/
+    confidence: low
+  - value: api/
+    confidence: medium
+  - value: api/v1/
+    confidence: medium
+  - value: login
+    confidence: medium
+  - value: admin/
+    confidence: medium
+  - value: instance/config.py
+    confidence: high

@@ -1,0 +1,32 @@
+name: Django
+paths:
+  - value: admin/
+    confidence: high
+  - value: static/
+    confidence: medium
+  - value: media/
+    confidence: medium
+  - value: api/
+    confidence: medium
+  - value: .env
+    confidence: high
+  - value: manage.py
+    confidence: high
+  - value: db.sqlite3
+    confidence: high
+  - value: __pycache__/
+    confidence: medium
+  - value: secret_key.txt
+    confidence: high
+  - value: django-admin.py
+    confidence: medium
+  - value: settings.py
+    confidence: high
+  - value: requirements.txt
+    confidence: medium
+  - value: api/v1/
+    confidence: medium
+  - value: accounts/login/
+    confidence: medium
+  - value: accounts/logout/
+    confidence: low

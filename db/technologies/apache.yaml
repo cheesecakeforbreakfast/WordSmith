@@ -1,0 +1,28 @@
+name: Apache
+paths:
+  - value: .htaccess
+    confidence: high
+  - value: server-status
+    confidence: high
+  - value: server-info
+    confidence: high
+  - value: cgi-bin/
+    confidence: medium
+  - value: error.log
+    confidence: medium
+  - value: access.log
+    confidence: medium
+  - value: httpd.conf
+    confidence: high
+  - value: .htpasswd
+    confidence: high
+  - value: icons/
+    confidence: medium
+  - value: manual/
+    confidence: low
+  - value: php.ini
+    confidence: medium
+  - value: .htaccess.bak
+    confidence: medium
+  - value: web.config
+    confidence: medium

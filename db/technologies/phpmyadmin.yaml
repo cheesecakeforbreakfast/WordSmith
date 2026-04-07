@@ -1,0 +1,28 @@
+name: phpMyAdmin
+paths:
+  - value: phpmyadmin/
+    confidence: high
+  - value: pma/
+    confidence: high
+  - value: phpMyAdmin/
+    confidence: high
+  - value: db/
+    confidence: medium
+  - value: setup/
+    confidence: high
+  - value: config.inc.php
+    confidence: high
+  - value: ChangeLog
+    confidence: medium
+  - value: README
+    confidence: low
+  - value: themes/
+    confidence: medium
+  - value: libraries/
+    confidence: medium
+  - value: sql/
+    confidence: medium
+  - value: phpmyadmin/setup/
+    confidence: high
+  - value: phpmyadmin/config.inc.php
+    confidence: high

@@ -1,0 +1,32 @@
+name: ASP.NET
+paths:
+  - value: elmah.axd
+    confidence: high
+  - value: trace.axd
+    confidence: high
+  - value: ScriptResource.axd
+    confidence: medium
+  - value: WebResource.axd
+    confidence: medium
+  - value: admin/
+    confidence: medium
+  - value: App_Data/
+    confidence: high
+  - value: web.config
+    confidence: high
+  - value: Global.asax
+    confidence: high
+  - value: bin/
+    confidence: medium
+  - value: App_Code/
+    confidence: medium
+  - value: aspnet_client/
+    confidence: high
+  - value: Telerik.Web.UI.WebResource.axd
+    confidence: medium
+  - value: Sitefinity/
+    confidence: low
+  - value: _layouts/
+    confidence: low
+  - value: api/
+    confidence: medium

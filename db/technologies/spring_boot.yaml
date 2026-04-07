@@ -1,0 +1,34 @@
+name: Spring Boot
+paths:
+  - value: actuator/
+    confidence: high
+  - value: actuator/env
+    confidence: high
+  - value: actuator/health
+    confidence: high
+  - value: actuator/beans
+    confidence: high
+  - value: actuator/metrics
+    confidence: high
+  - value: actuator/mappings
+    confidence: high
+  - value: actuator/loggers
+    confidence: high
+  - value: h2-console/
+    confidence: high
+  - value: swagger-ui.html
+    confidence: medium
+  - value: v2/api-docs
+    confidence: medium
+  - value: v3/api-docs
+    confidence: medium
+  - value: api-docs/
+    confidence: medium
+  - value: actuator/threaddump
+    confidence: high
+  - value: actuator/heapdump
+    confidence: high
+  - value: actuator/httptrace
+    confidence: high
+  - value: actuator/shutdown
+    confidence: high

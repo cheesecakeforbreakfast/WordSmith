@@ -1,0 +1,32 @@
+name: Express
+paths:
+  - value: api/
+    confidence: medium
+  - value: api/v1/
+    confidence: medium
+  - value: .env
+    confidence: high
+  - value: package.json
+    confidence: high
+  - value: routes/
+    confidence: medium
+  - value: middleware/
+    confidence: medium
+  - value: controllers/
+    confidence: medium
+  - value: config/
+    confidence: medium
+  - value: public/
+    confidence: medium
+  - value: views/
+    confidence: medium
+  - value: app.js
+    confidence: high
+  - value: server.js
+    confidence: high
+  - value: index.js
+    confidence: medium
+  - value: package-lock.json
+    confidence: medium
+  - value: node_modules/
+    confidence: low

@@ -1,0 +1,8 @@
+depth: 3
+confidence: low
+output_dir: ~/.wordsmith/output/
+sessions_dir: ~/.wordsmith/sessions/
+user_agent: "Mozilla/5.0 (compatible; research)"
+timeout: 10
+max_crawl_pages: 200
+provider: none
