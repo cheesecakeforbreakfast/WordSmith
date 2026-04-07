@@ -200,6 +200,24 @@ CLI flags always override config file values.
 | `dirsearch` | Flat `.txt`, one path per line |
 | `ffuf` | Flat `.txt`, one path per line (same as dirsearch) |
 | `json` | Full path objects with `value`, `source`, `confidence`, and `technology` fields |
+| `prompt` | LLM-ready summary — paste into any LLM to generate an expanded wordlist |
+
+### LLM-assisted wordlist expansion
+
+The `prompt` format produces a concise summary of the detected tech stack and known paths, formatted as a ready-to-paste prompt for any LLM (ChatGPT, Claude, Gemini, etc.).
+
+```bash
+python wordsmith.py build report.json --format prompt --output prompt.txt
+# then paste prompt.txt into your LLM of choice
+```
+
+The generated prompt includes:
+- The target URL
+- Detected technologies with confidence levels and detection source
+- A sample of paths already identified (capped at 30 to stay concise)
+- A structured ask for additional high-value paths specific to the detected stack
+
+The LLM output can then be saved to a `.txt` file and fed directly into dirsearch or ffuf alongside or instead of the WordSmith wordlist.
 
 ## Notes
 
